@@ -10,6 +10,7 @@ import ProtectedRoute from './ProtectedRoute';
 import LandingPage from '../pages/public/LandingPage';
 import LoginPage from '../pages/public/LoginPage';
 import RegisterPage from '../pages/public/RegisterPage';
+import AccessDeniedPage from '../pages/public/AccessDeniedPage';
 
 // Student Pages
 import StudentOverview from '../pages/student/StudentOverview';
@@ -31,17 +32,19 @@ import SubmissionDetails from '../pages/admin/SubmissionDetails';
 export const AppRoutes = () => {
   return (
     <Routes>
-      {/* Public Pages */}
+      {/* Public Routes */}
       <Route element={<PublicLayout />}>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/unauthorized" element={<AccessDeniedPage />} />
       </Route>
 
-      {/* Student Protected Routes */}
+      {/* Student Protected Routes (Cognito Group: STUDENT) */}
       <Route element={<ProtectedRoute allowedRoles={['student']} />}>
         <Route element={<DashboardLayout />}>
           <Route path="/student" element={<StudentOverview />} />
+          <Route path="/student/dashboard" element={<StudentOverview />} />
           <Route path="/student/assignments" element={<MyAssignments />} />
           <Route path="/student/assignments/:id" element={<AssignmentDetails />} />
           <Route path="/student/assignments/:id/submit" element={<SubmitAssignment />} />
@@ -50,10 +53,11 @@ export const AppRoutes = () => {
         </Route>
       </Route>
 
-      {/* Faculty / Admin Protected Routes */}
+      {/* Faculty / Admin Protected Routes (Cognito Group: FACULTY) */}
       <Route element={<ProtectedRoute allowedRoles={['faculty']} />}>
         <Route element={<DashboardLayout />}>
           <Route path="/admin" element={<AdminOverview />} />
+          <Route path="/admin/dashboard" element={<AdminOverview />} />
           <Route path="/admin/assignments" element={<ManageAssignments />} />
           <Route path="/admin/assignments/create" element={<CreateAssignment />} />
           <Route path="/admin/assignments/:id/edit" element={<EditAssignment />} />
@@ -63,7 +67,7 @@ export const AppRoutes = () => {
         </Route>
       </Route>
 
-      {/* Fallback */}
+      {/* Catch-all redirect */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

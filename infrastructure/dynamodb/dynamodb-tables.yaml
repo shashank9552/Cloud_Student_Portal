@@ -1,0 +1,206 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  AWS CloudFormation Template for Cloud-Based Student Management & Assignment Portal.
+  Provisions Amazon DynamoDB tables for Users, Assignments, and Submissions with
+  Global Secondary Indexes (GSIs), PAY_PER_REQUEST billing, encryption, and PITR.
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+    Description: Deployment stage/environment for resource naming and tagging.
+
+  ProjectName:
+    Type: String
+    Default: CloudEdu
+    Description: Base project identifier for naming DynamoDB tables and resources.
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "Project Configuration"
+        Parameters:
+          - ProjectName
+          - Environment
+
+Resources:
+  # ============================================================================
+  # TABLE 1: Users Table (CloudEdu-Users)
+  # Partition Key: userId (Cognito Identity Sub)
+  # GSI: RollNumberIndex (Query by university roll number)
+  # ============================================================================
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${ProjectName}-Users"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: rollNumber
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: RollNumberIndex
+          KeySchema:
+            - AttributeName: rollNumber
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Component
+          Value: Database-Users
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  # ============================================================================
+  # TABLE 2: Assignments Table (CloudEdu-Assignments)
+  # Partition Key: assignmentId (UUID)
+  # GSI: CourseCodeIndex (Query by courseCode sorted by createdAt DESC)
+  # ============================================================================
+  AssignmentsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${ProjectName}-Assignments"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: assignmentId
+          AttributeType: S
+        - AttributeName: courseCode
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: assignmentId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: CourseCodeIndex
+          KeySchema:
+            - AttributeName: courseCode
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Component
+          Value: Database-Assignments
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  # ============================================================================
+  # TABLE 3: Submissions Table (CloudEdu-Submissions)
+  # Partition Key: studentId (Cognito sub of student)
+  # Sort Key: submissionKey (assignmentId#submittedAt)
+  # GSI 1: AssignmentSubmissionsIndex (Query all submissions for an assignment)
+  # GSI 2: StudentSubmissionsIndex (Query all submissions of a student for an assignment)
+  # ============================================================================
+  SubmissionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${ProjectName}-Submissions"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: studentId
+          AttributeType: S
+        - AttributeName: submissionKey
+          AttributeType: S
+        - AttributeName: assignmentId
+          AttributeType: S
+        - AttributeName: submittedAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: studentId
+          KeyType: HASH
+        - AttributeName: submissionKey
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: AssignmentSubmissionsIndex
+          KeySchema:
+            - AttributeName: assignmentId
+              KeyType: HASH
+            - AttributeName: submittedAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: StudentSubmissionsIndex
+          KeySchema:
+            - AttributeName: studentId
+              KeyType: HASH
+            - AttributeName: assignmentId
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Component
+          Value: Database-Submissions
+        - Key: ManagedBy
+          Value: CloudFormation
+
+Outputs:
+  UsersTableName:
+    Description: Name of the DynamoDB Users table
+    Value: !Ref UsersTable
+    Export:
+      Name: !Sub "${AWS::StackName}-UsersTableName"
+
+  UsersTableArn:
+    Description: ARN of the DynamoDB Users table
+    Value: !GetAtt UsersTable.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-UsersTableArn"
+
+  AssignmentsTableName:
+    Description: Name of the DynamoDB Assignments table
+    Value: !Ref AssignmentsTable
+    Export:
+      Name: !Sub "${AWS::StackName}-AssignmentsTableName"
+
+  AssignmentsTableArn:
+    Description: ARN of the DynamoDB Assignments table
+    Value: !GetAtt AssignmentsTable.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-AssignmentsTableArn"
+
+  SubmissionsTableName:
+    Description: Name of the DynamoDB Submissions table
+    Value: !Ref SubmissionsTable
+    Export:
+      Name: !Sub "${AWS::StackName}-SubmissionsTableName"
+
+  SubmissionsTableArn:
+    Description: ARN of the DynamoDB Submissions table
+    Value: !GetAtt SubmissionsTable.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-SubmissionsTableArn"

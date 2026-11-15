@@ -24,12 +24,21 @@ import Card from '../../components/common/Card';
 import { useAuth } from '../../hooks/useAuth';
 
 export const LandingPage = () => {
-  const { switchRole } = useAuth();
+  const { login, isCognitoConfigured } = useAuth();
   const navigate = useNavigate();
 
-  const handleQuickDemo = (role) => {
-    switchRole(role);
-    navigate(role === 'faculty' ? '/admin' : '/student');
+  const handleQuickDemo = async (targetRole) => {
+    if (!isCognitoConfigured) {
+      const email = targetRole === 'faculty' ? 'faculty@cloudedu.ac.in' : 'student@cloudedu.ac.in';
+      try {
+        await login(email, 'password123');
+        navigate(targetRole === 'faculty' ? '/admin/dashboard' : '/student/dashboard');
+      } catch (err) {
+        navigate('/login');
+      }
+    } else {
+      navigate('/login');
+    }
   };
 
   return (

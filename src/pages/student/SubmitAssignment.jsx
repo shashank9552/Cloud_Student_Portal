@@ -62,22 +62,34 @@ export const SubmitAssignment = () => {
   const handleFinalSubmit = async () => {
     setSubmitting(true);
     try {
+      // Step 1: Request private S3 presigned PUT URL from API Gateway / Lambda
+      const uploadData = await submissionService.getPresignedUploadUrl(
+        assignment.id || assignment.assignmentId,
+        selectedFile.name,
+        'application/pdf'
+      );
+
+      // Step 2: Directly upload PDF bytes from browser to Amazon S3
+      await submissionService.uploadFileToS3(uploadData.uploadUrl, selectedFile);
+
+      // Step 3: Record metadata and S3 object key in Amazon DynamoDB
       await submissionService.submitAssignment({
-        assignmentId: assignment.id,
+        assignmentId: assignment.id || assignment.assignmentId,
         assignmentTitle: assignment.title,
-        courseCode: assignment.code,
+        courseCode: assignment.code || assignment.courseCode,
         studentId: user?.id,
         studentName: user?.name,
         studentRoll: user?.rollNumber || 'MCA2024042',
         studentEmail: user?.email,
         fileName: selectedFile.name,
         fileSize: formatFileSize(selectedFile.size),
+        s3FileKey: uploadData.fileKey,
         remarks: remarks,
-        maxMarks: assignment.totalMarks,
+        maxMarks: assignment.totalMarks || assignment.maxMarks,
       });
 
       setShowConfirmModal(false);
-      toast.success('Assignment PDF uploaded and submitted successfully!');
+      toast.success('Assignment PDF securely uploaded to S3 and submitted successfully!');
       navigate('/student/submissions');
     } catch (err) {
       toast.error(err.message || 'Submission failed. Please try again.');

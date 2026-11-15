@@ -1,53 +1,88 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { GraduationCap, Mail, Lock, ShieldCheck, UserCheck, ArrowRight, Sparkles } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import {
+  GraduationCap,
+  Mail,
+  Lock,
+  ShieldCheck,
+  UserCheck,
+  ArrowRight,
+  Sparkles,
+  AlertCircle,
+  Cloud,
+  Info
+} from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
+import { awsConfig } from '../../services/awsConfig';
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import Card from '../../components/common/Card';
 
 export const LoginPage = () => {
-  const [email, setEmail] = useState('student@cloudedu.ac.in');
-  const [password, setPassword] = useState('password123');
-  const [role, setRole] = useState('student'); // 'student' | 'faculty'
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [unconfirmedEmail, setUnconfirmedEmail] = useState(null);
 
-  const { login } = useAuth();
+  const { login, isCognitoConfigured } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // If redirected from a protected route, preserve destination
+  const from = location.state?.from?.pathname || null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setUnconfirmedEmail(null);
 
-    if (!email || !password) {
-      setError('Please provide your email and password.');
+    if (!email.trim() || !password) {
+      setError('Please provide your academic email and password.');
       return;
     }
 
     setLoading(true);
     try {
-      const loggedUser = await login(email, password, role);
-      toast.success(`Welcome back, ${loggedUser.name}!`);
-      navigate(loggedUser.role === 'faculty' ? '/admin' : '/student');
+      const loggedUser = await login(email, password);
+      toast.success(`Authenticated successfully as ${loggedUser.name}!`);
+
+      // Determine redirect path from verified role
+      if (from) {
+        navigate(from, { replace: true });
+      } else {
+        const targetPath = loggedUser.role === 'faculty' ? '/admin/dashboard' : '/student/dashboard';
+        navigate(targetPath, { replace: true });
+      }
     } catch (err) {
-      setError(err.message || 'Authentication failed. Please verify your credentials.');
-      toast.error('Login failed');
+      console.error('[Login failure]:', err);
+
+      if (err.name === 'UserNotConfirmedException' || err.message?.includes('not verified')) {
+        setError('Your email has not been verified yet. Please confirm your email with the 6-digit code sent to your inbox.');
+        setUnconfirmedEmail(email.trim().toLowerCase());
+      } else if (err.name === 'NotAuthorizedException' || err.message?.includes('Incorrect username or password')) {
+        setError('Incorrect email or password. Please verify your credentials and try again.');
+      } else if (err.name === 'UserNotFoundException') {
+        setError('No account exists with this email address. Please register a student account.');
+      } else {
+        setError(err.message || 'Authentication failed. Please verify your credentials.');
+      }
+      toast.error('Authentication failed');
     } finally {
       setLoading(false);
     }
   };
 
-  const fillDemoCredentials = (targetRole) => {
-    setRole(targetRole);
-    if (targetRole === 'student') {
+  // Quick-fill helper for development / mock evaluation only
+  const fillMockCredentials = (role) => {
+    if (role === 'student') {
       setEmail('student@cloudedu.ac.in');
-      setPassword('studentPass123');
+      setPassword('password123');
     } else {
       setEmail('faculty@cloudedu.ac.in');
-      setPassword('facultyPass123');
+      setPassword('password123');
     }
     setError('');
   };
@@ -66,98 +101,86 @@ export const LoginPage = () => {
             Sign In to CloudEdu Portal
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Access your student submissions or faculty administration console
+            Amazon Cognito Authenticated Academic Gateway
           </p>
         </div>
 
-        {/* Demo Accounts Quick-Fill Box (Great for portfolio reviewers!) */}
-        <div className="bg-brand-50/70 border border-brand-200 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="w-4 h-4 text-brand-600 shrink-0" />
-            <span className="text-xs font-bold text-brand-900 uppercase tracking-wider">
-              1-Click Demo Showcase
-            </span>
+        {/* AWS Cognito Environment Status Banner */}
+        {isCognitoConfigured ? (
+          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 flex items-center gap-2.5 shadow-subtle">
+            <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+            <div className="flex-1">
+              <span className="font-bold">Amazon Cognito Connected:</span> Region{' '}
+              <code className="bg-emerald-100/80 px-1 py-0.5 rounded text-[11px] font-mono">
+                {awsConfig.region}
+              </code>
+              . Roles are securely derived from JWT claims.
+            </div>
           </div>
-          <p className="text-xs text-brand-700 mb-3">
-            Click below to autofill pre-configured demo credentials:
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => fillDemoCredentials('student')}
-              className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold border transition-all ${
-                role === 'student'
-                  ? 'bg-brand-600 text-white border-brand-600 shadow-sm'
-                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              <UserCheck className="w-3.5 h-3.5" />
-              <span>Student Demo</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => fillDemoCredentials('faculty')}
-              className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold border transition-all ${
-                role === 'faculty'
-                  ? 'bg-brand-600 text-white border-brand-600 shadow-sm'
-                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Faculty Admin</span>
-            </button>
+        ) : (
+          <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 shadow-subtle">
+            <div className="flex items-center gap-2 mb-1.5 font-bold">
+              <Info className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>Development Mode (Cognito Not Configured)</span>
+            </div>
+            <p className="text-[11px] text-amber-800 leading-relaxed mb-3">
+              To connect real AWS Cognito, supply <code>VITE_COGNITO_USER_POOL_ID</code> and{' '}
+              <code>VITE_COGNITO_CLIENT_ID</code> in <code>.env</code>. You can test locally using demo credentials below:
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => fillMockCredentials('student')}
+                className="flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-subtle transition-all"
+              >
+                <UserCheck className="w-3.5 h-3.5 text-brand-600" />
+                <span>Student Demo</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => fillMockCredentials('faculty')}
+                className="flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 shadow-subtle transition-all"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
+                <span>Faculty Demo</span>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Login Card */}
         <Card className="shadow-lg">
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
-                {error}
+              <div className="p-3.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium space-y-2">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  <span>{error}</span>
+                </div>
+                {unconfirmedEmail && (
+                  <div className="pt-2 border-t border-rose-200 flex justify-end">
+                    <Link
+                      to="/register"
+                      className="inline-flex items-center gap-1 font-bold text-brand-700 hover:underline"
+                    >
+                      <span>Enter verification code</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Role Radio Pills */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                Portal Role
-              </label>
-              <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-lg">
-                <button
-                  type="button"
-                  onClick={() => setRole('student')}
-                  className={`py-1.5 text-xs font-semibold rounded-md transition-all ${
-                    role === 'student'
-                      ? 'bg-white text-slate-900 shadow-subtle'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Student
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRole('faculty')}
-                  className={`py-1.5 text-xs font-semibold rounded-md transition-all ${
-                    role === 'faculty'
-                      ? 'bg-white text-slate-900 shadow-subtle'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Faculty / Admin
-                </button>
-              </div>
-            </div>
-
             {/* Email */}
             <Input
-              label="Email Address"
+              label="Academic Email Address"
               type="email"
               icon={Mail}
               placeholder="e.g. student@cloudedu.ac.in"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoFocus
             />
 
             {/* Password */}
@@ -181,15 +204,15 @@ export const LoginPage = () => {
               icon={ArrowRight}
               iconPosition="right"
             >
-              Sign In to {role === 'faculty' ? 'Faculty Admin' : 'Student Dashboard'}
+              Sign In with Cognito
             </Button>
           </form>
 
           {/* Registration Link */}
           <div className="mt-6 pt-4 border-t border-slate-100 text-center text-xs text-slate-500">
-            Don't have an enrolled student account?{' '}
+            Don't have an account yet?{' '}
             <Link to="/register" className="font-semibold text-brand-600 hover:text-brand-700">
-              Register here
+              Register as Student
             </Link>
           </div>
         </Card>

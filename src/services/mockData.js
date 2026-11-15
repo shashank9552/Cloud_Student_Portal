@@ -1,9 +1,11 @@
 /**
  * Realistic Mock Data for MCA Cloud Computing Project
+ * Designed to mirror Amazon DynamoDB schema definitions for Phase 3
  */
 
 export const initialUsers = [
   {
+    userId: 'usr-student-001',
     id: 'usr-student-001',
     role: 'student',
     name: 'Aarav Patel',
@@ -14,6 +16,9 @@ export const initialUsers = [
     department: 'Department of Computer Science & Engineering',
     semester: 'Semester 4',
     academicYear: '2025-2026',
+    phone: '+91 98765 43210',
+    createdAt: '2025-08-01T09:00:00Z',
+    updatedAt: '2026-11-01T10:00:00Z',
     enrolledCourses: [
       { code: 'MCA-401', name: 'Cloud Computing & AWS Serverless', credits: 4 },
       { code: 'MCA-402', name: 'Distributed Systems & NoSQL Databases', credits: 4 },
@@ -27,6 +32,7 @@ export const initialUsers = [
     }
   },
   {
+    userId: 'usr-faculty-001',
     id: 'usr-faculty-001',
     role: 'faculty',
     name: 'Dr. Radhika Sharma',
@@ -37,6 +43,9 @@ export const initialUsers = [
     department: 'Department of Computer Science & Engineering',
     specialization: 'Cloud Computing, Serverless Architecture & Distributed Systems',
     officeHours: 'Mon & Wed: 2:00 PM - 5:00 PM',
+    phone: '+91 98111 22334',
+    createdAt: '2024-07-15T08:30:00Z',
+    updatedAt: '2026-10-15T11:20:00Z',
     contact: {
       phone: '+91 98111 22334',
       office: 'Turing Hall, Room CS-412'
@@ -46,6 +55,7 @@ export const initialUsers = [
 
 export const initialStudents = [
   {
+    userId: 'usr-student-001',
     id: 'usr-student-001',
     name: 'Aarav Patel',
     email: 'student@cloudedu.ac.in',
@@ -58,6 +68,7 @@ export const initialStudents = [
     gpa: '8.92'
   },
   {
+    userId: 'usr-student-002',
     id: 'usr-student-002',
     name: 'Ananya Deshmukh',
     email: 'ananya.d@cloudedu.ac.in',
@@ -70,6 +81,7 @@ export const initialStudents = [
     gpa: '9.40'
   },
   {
+    userId: 'usr-student-003',
     id: 'usr-student-003',
     name: 'Rohan Mehra',
     email: 'rohan.m@cloudedu.ac.in',
@@ -82,6 +94,7 @@ export const initialStudents = [
     gpa: '8.15'
   },
   {
+    userId: 'usr-student-004',
     id: 'usr-student-004',
     name: 'Priyanka Sen',
     email: 'priyanka.s@cloudedu.ac.in',
@@ -94,6 +107,7 @@ export const initialStudents = [
     gpa: '9.10'
   },
   {
+    userId: 'usr-student-005',
     id: 'usr-student-005',
     name: 'Vikramaditya Roy',
     email: 'vikram.roy@cloudedu.ac.in',
@@ -109,11 +123,19 @@ export const initialStudents = [
 
 export const initialAssignments = [
   {
+    assignmentId: 'asn-001',
     id: 'asn-001',
+    courseCode: 'MCA-401',
     code: 'MCA-401',
     courseName: 'Cloud Computing & AWS Serverless',
     title: 'Serverless REST API using AWS Lambda, API Gateway & DynamoDB',
     description: 'Design and document a scalable serverless backend microservice architecture for an e-commerce order processing pipeline. Include IAM least-privilege policies, DynamoDB single-table design schema, and CloudWatch metrics alarms.',
+    guidelines: [
+      'Document the architectural diagram detailing AWS Cognito, API Gateway, Lambda, and DynamoDB.',
+      'Specify the DynamoDB Primary Key (PK), Sort Key (SK), and Global Secondary Indexes (GSIs).',
+      'Provide Node.js / Python Lambda code snippets for CRUD operations.',
+      'Submit your final report as a consolidated PDF (Max 10MB).'
+    ],
     instructions: [
       'Document the architectural diagram detailing AWS Cognito, API Gateway, Lambda, and DynamoDB.',
       'Specify the DynamoDB Primary Key (PK), Sort Key (SK), and Global Secondary Indexes (GSIs).',
@@ -122,7 +144,10 @@ export const initialAssignments = [
     ],
     deadline: '2026-11-25T23:59:59',
     createdAt: '2026-11-01T10:00:00',
+    updatedAt: '2026-11-01T10:00:00',
+    maxMarks: 100,
     totalMarks: 100,
+    createdBy: 'usr-faculty-001',
     facultyId: 'usr-faculty-001',
     facultyName: 'Dr. Radhika Sharma',
     status: 'Active',
@@ -130,11 +155,18 @@ export const initialAssignments = [
     fileAttachment: 'AWS_Serverless_Architecture_Specification_v2.pdf'
   },
   {
+    assignmentId: 'asn-002',
     id: 'asn-002',
+    courseCode: 'MCA-402',
     code: 'MCA-402',
     courseName: 'Distributed Systems & NoSQL Databases',
     title: 'CAP Theorem Analysis & DynamoDB Consensus Protocols',
     description: 'Provide an in-depth analytical breakdown comparing Amazon DynamoDB and Apache Cassandra. Analyze tunable consistency, write isolation levels, multi-region replication (DynamoDB Global Tables), and Paxos/Raft consensus guarantees.',
+    guidelines: [
+      'Perform quantitative throughput benchmarking comparison.',
+      'Analyze failure recovery scenarios in distributed partitions.',
+      'Format in IEEE conference paper format (double-column PDF).'
+    ],
     instructions: [
       'Perform quantitative throughput benchmarking comparison.',
       'Analyze failure recovery scenarios in distributed partitions.',
@@ -142,7 +174,10 @@ export const initialAssignments = [
     ],
     deadline: '2026-11-30T23:59:59',
     createdAt: '2026-11-05T14:30:00',
+    updatedAt: '2026-11-05T14:30:00',
+    maxMarks: 50,
     totalMarks: 50,
+    createdBy: 'usr-faculty-001',
     facultyId: 'usr-faculty-001',
     facultyName: 'Dr. Radhika Sharma',
     status: 'Active',
@@ -150,11 +185,18 @@ export const initialAssignments = [
     fileAttachment: 'Distributed_Systems_Research_Template.pdf'
   },
   {
+    assignmentId: 'asn-003',
     id: 'asn-003',
+    courseCode: 'MCA-403',
     code: 'MCA-403',
     courseName: 'Deep Learning & Neural Networks',
     title: 'Object Detection & Semantic Segmentation using PyTorch',
     description: 'Train a YOLOv8 or Mask R-CNN network on custom medical radiology datasets. Evaluate Mean Average Precision (mAP@50-95), precision-recall curves, and perform ablation studies on backbone feature extractors.',
+    guidelines: [
+      'Provide train/val loss curves and confusion matrix.',
+      'Include inference latency benchmarks across CPU vs GPU instances.',
+      'Export PDF report including sample inference masks.'
+    ],
     instructions: [
       'Provide train/val loss curves and confusion matrix.',
       'Include inference latency benchmarks across CPU vs GPU instances.',
@@ -162,7 +204,10 @@ export const initialAssignments = [
     ],
     deadline: '2026-12-05T23:59:59',
     createdAt: '2026-11-10T09:15:00',
+    updatedAt: '2026-11-10T09:15:00',
+    maxMarks: 100,
     totalMarks: 100,
+    createdBy: 'usr-faculty-001',
     facultyId: 'usr-faculty-001',
     facultyName: 'Dr. Radhika Sharma',
     status: 'Active',
@@ -170,11 +215,18 @@ export const initialAssignments = [
     fileAttachment: null
   },
   {
+    assignmentId: 'asn-004',
     id: 'asn-004',
+    courseCode: 'MCA-404',
     code: 'MCA-404',
     courseName: 'Full-Stack Enterprise Systems',
     title: 'Modern SPA State Architecture & Micro-Frontends',
     description: 'Architect a production-grade single page application using React 18, Vite, Module Federation, and Tailwind CSS. Implement optimistic UI updates, resilient caching, and accessibility standards (WCAG 2.1 AA).',
+    guidelines: [
+      'Submit system component hierarchy and data flow charts.',
+      'Explain bundle size optimization techniques employed (tree shaking, code splitting).',
+      'Submit project summary PDF with repository links.'
+    ],
     instructions: [
       'Submit system component hierarchy and data flow charts.',
       'Explain bundle size optimization techniques employed (tree shaking, code splitting).',
@@ -182,7 +234,10 @@ export const initialAssignments = [
     ],
     deadline: '2026-12-12T23:59:59',
     createdAt: '2026-11-12T11:00:00',
+    updatedAt: '2026-11-12T11:00:00',
+    maxMarks: 75,
     totalMarks: 75,
+    createdBy: 'usr-faculty-001',
     facultyId: 'usr-faculty-001',
     facultyName: 'Dr. Radhika Sharma',
     status: 'Active',
@@ -190,11 +245,18 @@ export const initialAssignments = [
     fileAttachment: 'Enterprise_SPA_Guidelines.pdf'
   },
   {
+    assignmentId: 'asn-005',
     id: 'asn-005',
+    courseCode: 'MCA-401',
     code: 'MCA-401',
     courseName: 'Cloud Computing & AWS Serverless',
     title: 'Automated CI/CD Pipeline with AWS CodePipeline & GitHub',
     description: 'Configure a zero-downtime Blue/Green deployment pipeline for containerized ECS tasks using AWS CodeBuild, CodeDeploy, and GitHub webhooks with automated canary verification.',
+    guidelines: [
+      'Include complete buildspec.yml and appspec.yaml files.',
+      'Show rollback triggering upon synthetic canary health failure.',
+      'Submit PDF with CloudWatch alarm metric screenshots.'
+    ],
     instructions: [
       'Include complete buildspec.yml and appspec.yaml files.',
       'Show rollback triggering upon synthetic canary health failure.',
@@ -202,7 +264,10 @@ export const initialAssignments = [
     ],
     deadline: '2026-10-28T23:59:59',
     createdAt: '2026-10-10T08:00:00',
+    updatedAt: '2026-10-10T08:00:00',
+    maxMarks: 50,
     totalMarks: 50,
+    createdBy: 'usr-faculty-001',
     facultyId: 'usr-faculty-001',
     facultyName: 'Dr. Radhika Sharma',
     status: 'Closed',
@@ -213,120 +278,150 @@ export const initialAssignments = [
 
 export const initialSubmissions = [
   {
+    submissionId: 'sub-001',
     id: 'sub-001',
+    studentId: 'usr-student-001',
     assignmentId: 'asn-001',
+    submissionKey: 'asn-001#2026-11-18T16:45:00',
     assignmentTitle: 'Serverless REST API using AWS Lambda, API Gateway & DynamoDB',
     courseCode: 'MCA-401',
-    studentId: 'usr-student-001',
     studentName: 'Aarav Patel',
     studentRoll: 'MCA2024042',
     studentEmail: 'student@cloudedu.ac.in',
     fileName: 'Aarav_Patel_MCA2024042_Serverless_API_Project.pdf',
+    s3FileKey: 'submissions/asn-001/usr-student-001/Aarav_Patel_MCA2024042_Serverless_API_Project.pdf',
     fileSize: '4.2 MB',
     submittedAt: '2026-11-18T16:45:00',
     status: 'Approved', // Pending, Reviewed, Approved, Rejected
+    marks: 96,
     grade: 96,
     maxMarks: 100,
+    facultyFeedback: 'Exceptional architectural breakdown! The DynamoDB GSI partitioning strategy and least-privilege IAM policies are industry-grade. Well done.',
     feedback: 'Exceptional architectural breakdown! The DynamoDB GSI partitioning strategy and least-privilege IAM policies are industry-grade. Well done.',
     remarks: 'Included Terraform IaC script repository link and CloudWatch dashboard snapshot on page 14.',
     reviewedAt: '2026-11-20T11:30:00',
     reviewedBy: 'Dr. Radhika Sharma'
   },
   {
+    submissionId: 'sub-002',
     id: 'sub-002',
+    studentId: 'usr-student-001',
     assignmentId: 'asn-002',
+    submissionKey: 'asn-002#2026-11-22T09:12:00',
     assignmentTitle: 'CAP Theorem Analysis & DynamoDB Consensus Protocols',
     courseCode: 'MCA-402',
-    studentId: 'usr-student-001',
     studentName: 'Aarav Patel',
     studentRoll: 'MCA2024042',
     studentEmail: 'student@cloudedu.ac.in',
     fileName: 'Aarav_Patel_DynamoDB_Paxos_Research.pdf',
+    s3FileKey: 'submissions/asn-002/usr-student-001/Aarav_Patel_DynamoDB_Paxos_Research.pdf',
     fileSize: '2.8 MB',
     submittedAt: '2026-11-22T09:12:00',
     status: 'Reviewed',
+    marks: 44,
     grade: 44,
     maxMarks: 50,
+    facultyFeedback: 'Solid analysis of DynamoDB Global Tables replication lag. Consider adding more details on write isolation under high contention.',
     feedback: 'Solid analysis of DynamoDB Global Tables replication lag. Consider adding more details on write isolation under high contention.',
     remarks: 'Tested with 10k concurrent simulated client writes using Locust framework.',
     reviewedAt: '2026-11-23T14:10:00',
     reviewedBy: 'Dr. Radhika Sharma'
   },
   {
+    submissionId: 'sub-003',
     id: 'sub-003',
+    studentId: 'usr-student-001',
     assignmentId: 'asn-003',
+    submissionKey: 'asn-003#2026-11-24T18:20:00',
     assignmentTitle: 'Object Detection & Semantic Segmentation using PyTorch',
     courseCode: 'MCA-403',
-    studentId: 'usr-student-001',
     studentName: 'Aarav Patel',
     studentRoll: 'MCA2024042',
     studentEmail: 'student@cloudedu.ac.in',
     fileName: 'YOLOv8_Medical_Segmentation_Aarav.pdf',
+    s3FileKey: 'submissions/asn-003/usr-student-001/YOLOv8_Medical_Segmentation_Aarav.pdf',
     fileSize: '8.4 MB',
     submittedAt: '2026-11-24T18:20:00',
     status: 'Pending',
+    marks: null,
     grade: null,
     maxMarks: 100,
+    facultyFeedback: null,
     feedback: null,
     remarks: 'Model weights and checkpoints are hosted on Hugging Face hub as referenced in section 3.',
     reviewedAt: null,
     reviewedBy: null
   },
   {
+    submissionId: 'sub-004',
     id: 'sub-004',
+    studentId: 'usr-student-002',
     assignmentId: 'asn-001',
+    submissionKey: 'asn-001#2026-11-19T11:05:00',
     assignmentTitle: 'Serverless REST API using AWS Lambda, API Gateway & DynamoDB',
     courseCode: 'MCA-401',
-    studentId: 'usr-student-002',
     studentName: 'Ananya Deshmukh',
     studentRoll: 'MCA2024018',
     studentEmail: 'ananya.d@cloudedu.ac.in',
     fileName: 'Ananya_MCA2024018_AWS_Serverless_Submission.pdf',
+    s3FileKey: 'submissions/asn-001/usr-student-002/Ananya_MCA2024018_AWS_Serverless_Submission.pdf',
     fileSize: '5.1 MB',
     submittedAt: '2026-11-19T11:05:00',
     status: 'Approved',
+    marks: 98,
     grade: 98,
     maxMarks: 100,
+    facultyFeedback: 'Flawless execution! Excellent API Gateway rate-limiting and JWT authorizer integration.',
     feedback: 'Flawless execution! Excellent API Gateway rate-limiting and JWT authorizer integration.',
     remarks: 'Tested against OWASP Top 10 API Security risks.',
     reviewedAt: '2026-11-21T10:00:00',
     reviewedBy: 'Dr. Radhika Sharma'
   },
   {
+    submissionId: 'sub-005',
     id: 'sub-005',
+    studentId: 'usr-student-003',
     assignmentId: 'asn-002',
+    submissionKey: 'asn-002#2026-11-23T14:40:00',
     assignmentTitle: 'CAP Theorem Analysis & DynamoDB Consensus Protocols',
     courseCode: 'MCA-402',
-    studentId: 'usr-student-003',
     studentName: 'Rohan Mehra',
     studentRoll: 'MCA2024075',
     studentEmail: 'rohan.m@cloudedu.ac.in',
     fileName: 'Rohan_Mehra_CAP_DynamoDB.pdf',
+    s3FileKey: 'submissions/asn-002/usr-student-003/Rohan_Mehra_CAP_DynamoDB.pdf',
     fileSize: '3.6 MB',
     submittedAt: '2026-11-23T14:40:00',
     status: 'Pending',
+    marks: null,
     grade: null,
     maxMarks: 50,
+    facultyFeedback: null,
     feedback: null,
     remarks: 'Draft submission covering quorum intersection formulas.',
     reviewedAt: null,
     reviewedBy: null
   },
   {
+    submissionId: 'sub-006',
     id: 'sub-006',
+    studentId: 'usr-student-004',
     assignmentId: 'asn-001',
+    submissionKey: 'asn-001#2026-11-20T16:15:00',
     assignmentTitle: 'Serverless REST API using AWS Lambda, API Gateway & DynamoDB',
     courseCode: 'MCA-401',
-    studentId: 'usr-student-004',
     studentName: 'Priyanka Sen',
     studentRoll: 'MCA2024033',
     studentEmail: 'priyanka.s@cloudedu.ac.in',
     fileName: 'Priyanka_Sen_Serverless_Submission_v1.pdf',
+    s3FileKey: 'submissions/asn-001/usr-student-004/Priyanka_Sen_Serverless_Submission_v1.pdf',
     fileSize: '3.9 MB',
     submittedAt: '2026-11-20T16:15:00',
     status: 'Rejected',
+    marks: 30,
     grade: 30,
     maxMarks: 100,
+    facultyFeedback: 'The submission is missing the DynamoDB Single-Table Schema design diagram and the IAM security policy definitions required by the rubric. Please update and re-submit.',
     feedback: 'The submission is missing the DynamoDB Single-Table Schema design diagram and the IAM security policy definitions required by the rubric. Please update and re-submit.',
     remarks: 'Resubmission requested by faculty.',
     reviewedAt: '2026-11-21T15:20:00',

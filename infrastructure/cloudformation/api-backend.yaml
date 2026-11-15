@@ -1,0 +1,299 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  AWS CloudFormation Template for Cloud-Based Student Management & Assignment Portal.
+  Deploys Phase 4 Serverless Backend:
+  - Amazon S3 Private PDF Bucket with CORS and encryption
+  - IAM Least-Privilege Execution Role
+  - AWS Lambda Backend API (Node.js 24.x ESM)
+  - Amazon API Gateway HTTP API (v2) with Amazon Cognito JWT Authorizer
+  - Integration and Routing with CORS enabled
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+    Description: Deployment stage/environment name.
+
+  ProjectName:
+    Type: String
+    Default: CloudEdu
+    Description: Project prefix for resource naming.
+
+  CognitoUserPoolId:
+    Type: String
+    Description: Amazon Cognito User Pool ID (e.g. ap-south-1_xxxxxxxxx) from Phase 2.
+
+  CognitoClientId:
+    Type: String
+    Description: Amazon Cognito App Client ID (e.g. 7xxxxxxxxxxxxxxxxxxxxxxxxx) from Phase 2.
+
+  LambdaCodeS3Bucket:
+    Type: String
+    Default: ''
+    Description: Optional S3 bucket containing the backend zip bundle. Leave empty for inline starter stub.
+
+  LambdaCodeS3Key:
+    Type: String
+    Default: ''
+    Description: Optional S3 object key for backend zip bundle (e.g. backend.zip).
+
+Conditions:
+  UseS3Code: !And
+    - !Not [!Equals [!Ref LambdaCodeS3Bucket, '']]
+    - !Not [!Equals [!Ref LambdaCodeS3Key, '']]
+
+Resources:
+  # ============================================================================
+  # 1. S3 BUCKET FOR STUDENT ASSIGNMENT SUBMISSION PDFs
+  # ============================================================================
+  SubmissionsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AWS::StackName}-submissions-${AWS::AccountId}-${AWS::Region}"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - '*'
+            AllowedMethods:
+              - GET
+              - PUT
+              - HEAD
+            AllowedOrigins:
+              - '*'
+            ExposedHeaders:
+              - ETag
+            MaxAge: 3600
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Component
+          Value: Document-Storage
+
+  # ============================================================================
+  # 2. IAM ROLE FOR AWS LAMBDA BACKEND
+  # ============================================================================
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectName}-LambdaExecutionRole-${Environment}"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: DynamoDBReadWriteAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                Resource:
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ProjectName}-*"
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ProjectName}-*/index/*"
+        - PolicyName: S3PresignedDocumentAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:HeadObject
+                  - s3:DeleteObject
+                Resource:
+                  - !Sub "${SubmissionsBucket.Arn}/*"
+
+  # CloudWatch Log Group with 30-day retention
+  BackendLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${ProjectName}-Backend-API-${Environment}"
+      RetentionInDays: 30
+
+  # ============================================================================
+  # 3. AWS LAMBDA FUNCTION (Node.js 24.x)
+  # ============================================================================
+  BackendLambdaFunction:
+    Type: AWS::Lambda::Function
+    DependsOn:
+      - BackendLambdaLogGroup
+    Properties:
+      FunctionName: !Sub "${ProjectName}-Backend-API-${Environment}"
+      Runtime: nodejs24.x
+      Handler: src/apiRouter.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      MemorySize: 512
+      Timeout: 30
+      Code:
+        !If
+          - UseS3Code
+          - S3Bucket: !Ref LambdaCodeS3Bucket
+            S3Key: !Ref LambdaCodeS3Key
+          - ZipFile: |
+              export const handler = async (event) => {
+                return {
+                  statusCode: 200,
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                  },
+                  body: JSON.stringify({
+                    success: true,
+                    message: 'CloudEdu Backend API initial stub. Deploy backend code bundle to activate all routes.',
+                    timestamp: new Date().toISOString()
+                  })
+                };
+              };
+      Environment:
+        Variables:
+          AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1'
+          USERS_TABLE: !Sub "${ProjectName}-Users"
+          ASSIGNMENTS_TABLE: !Sub "${ProjectName}-Assignments"
+          SUBMISSIONS_TABLE: !Sub "${ProjectName}-Submissions"
+          SUBMISSIONS_S3_BUCKET: !Ref SubmissionsBucket
+          COGNITO_USER_POOL_ID: !Ref CognitoUserPoolId
+          COGNITO_CLIENT_ID: !Ref CognitoClientId
+          S3_URL_EXPIRATION_SECONDS: '900'
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # ============================================================================
+  # 4. AMAZON API GATEWAY (HTTP API v2)
+  # ============================================================================
+  HttpApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub "${ProjectName}-HTTP-API-${Environment}"
+      ProtocolType: HTTP
+      Description: HTTP API Gateway for CloudEdu Student Portal with Cognito JWT Authorization
+      CorsConfiguration:
+        AllowOrigins:
+          - '*'
+        AllowMethods:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+          - X-Amz-Date
+          - X-Api-Key
+          - X-Amz-Security-Token
+        MaxAge: 3600
+
+  # Cognito JWT Authorizer
+  CognitoJwtAuthorizer:
+    Type: AWS::ApiGatewayV2::Authorizer
+    Properties:
+      ApiId: !Ref HttpApi
+      AuthorizerType: JWT
+      IdentitySource:
+        - '$request.header.Authorization'
+      Name: CognitoAuthorizer
+      JwtConfiguration:
+        Audience:
+          - !Ref CognitoClientId
+        Issuer: !Sub "https://cognito-idp.${AWS::Region}.amazonaws.com/${CognitoUserPoolId}"
+
+  # Lambda Proxy Integration
+  LambdaApiIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt BackendLambdaFunction.Arn
+      PayloadFormatVersion: '2.0'
+      TimeoutInMillis: 30000
+
+  # Default / Catch-All Protected Route
+  DefaultProtectedRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: '$default'
+      AuthorizationType: JWT
+      AuthorizerId: !Ref CognitoJwtAuthorizer
+      Target: !Sub "integrations/${LambdaApiIntegration}"
+
+  # Public Health Route (No Auth required for uptime probes)
+  PublicHealthRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'GET /health'
+      AuthorizationType: NONE
+      Target: !Sub "integrations/${LambdaApiIntegration}"
+
+  # API Deployment Stage
+  ApiDefaultStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref HttpApi
+      StageName: '$default'
+      AutoDeploy: true
+
+  # Lambda Permission for API Gateway invocation
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref BackendLambdaFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*"
+
+Outputs:
+  ApiEndpointUrl:
+    Description: Base URL of the deployed Amazon API Gateway HTTP API
+    Value: !GetAtt HttpApi.ApiEndpoint
+    Export:
+      Name: !Sub "${AWS::StackName}-ApiEndpoint"
+
+  SubmissionsBucketName:
+    Description: S3 Bucket Name for private PDF submissions
+    Value: !Ref SubmissionsBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-SubmissionsBucket"
+
+  LambdaFunctionArn:
+    Description: ARN of the Backend API Lambda Function
+    Value: !GetAtt BackendLambdaFunction.Arn
+
+  LambdaRoleArn:
+    Description: IAM Role ARN for Backend Lambda
+    Value: !GetAtt LambdaExecutionRole.Arn

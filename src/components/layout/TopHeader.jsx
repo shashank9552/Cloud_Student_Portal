@@ -29,10 +29,14 @@ export const TopHeader = ({ onMenuClick }) => {
       <div className="flex items-center gap-3 sm:gap-4">
         {/* Architecture Status Pill */}
         <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-full border border-slate-200 text-xs">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span className="font-semibold text-slate-700">AWS Architecture:</span>
+          <span
+            className={`w-2 h-2 rounded-full ${
+              awsConfig.cognito.isConfigured ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
+            }`}
+          ></span>
+          <span className="font-semibold text-slate-700">Cognito Auth:</span>
           <span className="text-slate-500">
-            {awsConfig.isMockMode ? 'Simulation Mode' : 'Connected to API Gateway'}
+            {awsConfig.cognito.isConfigured ? `Active (${awsConfig.region})` : 'Dev Simulation'}
           </span>
         </div>
 

@@ -5,9 +5,11 @@ import { useAuth } from '../../hooks/useAuth';
 import Button from '../common/Button';
 
 export const PublicNavbar = () => {
-  const { isAuthenticated, role, user, switchRole } = useAuth();
+  const { isAuthenticated, role, user } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const getDashboardPath = () => (role === 'faculty' ? '/admin/dashboard' : '/student/dashboard');
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
@@ -23,7 +25,7 @@ export const PublicNavbar = () => {
                 <span className="font-bold text-lg text-slate-900 tracking-tight">CloudEdu</span>
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-brand-50 text-brand-700 border border-brand-200">
                   <Cloud className="w-3 h-3 text-brand-600" />
-                  AWS
+                  Cognito
                 </span>
               </div>
               <p className="text-[10px] text-slate-500 -mt-1 hidden sm:block">Serverless Assignment Portal</p>
@@ -36,10 +38,10 @@ export const PublicNavbar = () => {
               Features
             </a>
             <a href="#architecture" className="text-sm font-medium text-slate-600 hover:text-brand-600 transition-colors">
-              AWS Architecture
+              Cognito Architecture
             </a>
             <a href="#roles" className="text-sm font-medium text-slate-600 hover:text-brand-600 transition-colors">
-              Role Workflows
+              RBAC Groups
             </a>
             <a href="#about" className="text-sm font-medium text-slate-600 hover:text-brand-600 transition-colors">
               MCA Project
@@ -51,12 +53,13 @@ export const PublicNavbar = () => {
             {isAuthenticated ? (
               <div className="flex items-center gap-3">
                 <span className="text-xs text-slate-500">
-                  Logged in as <strong className="text-slate-800">{user?.name}</strong> ({role})
+                  Signed in as <strong className="text-slate-800">{user?.name}</strong> (
+                  <span className="font-mono text-brand-700 uppercase">{role}</span>)
                 </span>
                 <Button
                   size="sm"
                   variant="primary"
-                  onClick={() => navigate(role === 'faculty' ? '/admin' : '/student')}
+                  onClick={() => navigate(getDashboardPath())}
                   icon={ArrowRight}
                   iconPosition="right"
                 >
@@ -106,14 +109,14 @@ export const PublicNavbar = () => {
             onClick={() => setMobileMenuOpen(false)}
             className="block py-2 text-sm font-medium text-slate-700"
           >
-            AWS Architecture
+            Cognito Architecture
           </a>
           <a
             href="#roles"
             onClick={() => setMobileMenuOpen(false)}
             className="block py-2 text-sm font-medium text-slate-700"
           >
-            Role Workflows
+            RBAC Groups
           </a>
           <div className="pt-4 border-t border-slate-100 flex flex-col gap-2">
             {isAuthenticated ? (
@@ -121,7 +124,7 @@ export const PublicNavbar = () => {
                 variant="primary"
                 onClick={() => {
                   setMobileMenuOpen(false);
-                  navigate(role === 'faculty' ? '/admin' : '/student');
+                  navigate(getDashboardPath());
                 }}
               >
                 Go to {role === 'faculty' ? 'Admin' : 'Student'} Dashboard

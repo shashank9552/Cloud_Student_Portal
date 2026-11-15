@@ -1,0 +1,361 @@
+{
+  "info": {
+    "_postman_id": "c1a938b8-4c8d-4a1e-8e6d-20c453f54b4d",
+    "name": "CloudEdu Serverless Backend API (Phase 4)",
+    "description": "Production Postman Collection for Cloud-Based Student Management & Assignment Portal.\nTests all Amazon API Gateway HTTP API v2 routes with Amazon Cognito JWT Authorization, DynamoDB persistence, and S3 Presigned URL flows.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://xxxxxxxxxx.execute-api.ap-south-1.amazonaws.com",
+      "type": "string"
+    },
+    {
+      "key": "idToken",
+      "value": "YOUR_COGNITO_ID_TOKEN_HERE",
+      "type": "string"
+    },
+    {
+      "key": "assignmentId",
+      "value": "asn-101",
+      "type": "string"
+    },
+    {
+      "key": "submissionId",
+      "value": "sub-101",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{idToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health Probes (Public)",
+      "item": [
+        {
+          "name": "API Health Check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Verifies that Lambda and API Gateway are online and healthy without requiring auth."
+          }
+        }
+      ]
+    },
+    {
+      "name": "User & Student Profiles",
+      "item": [
+        {
+          "name": "Get Authenticated Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "profile"]
+            },
+            "description": "Retrieves the caller's profile from CloudEdu-Users based on the Cognito sub claim."
+          }
+        },
+        {
+          "name": "Update Profile Details",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Aarav Sharma\",\n  \"phone\": \"+919876543210\",\n  \"department\": \"Department of Computer Science & Engineering\",\n  \"semester\": \"Semester 4\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "profile"]
+            },
+            "description": "Updates non-privileged user attributes. Role modifications are blocked."
+          }
+        },
+        {
+          "name": "List Registered Students (Faculty Only)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/students",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "students"]
+            },
+            "description": "Returns all registered student records. Requires FACULTY Cognito group; returns 403 Forbidden for students."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Assignments Management",
+      "item": [
+        {
+          "name": "List All Assignments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/assignments?status=Active",
+              "host": ["{{baseUrl}}"],
+              "path": ["assignments"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "Active"
+                }
+              ]
+            },
+            "description": "Retrieves active course assignments."
+          }
+        },
+        {
+          "name": "Get Assignment By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/assignments/{{assignmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["assignments", "{{assignmentId}}"]
+            },
+            "description": "Retrieves specific assignment problem statement, guidelines, and deadline."
+          }
+        },
+        {
+          "name": "Create Assignment (Faculty Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Serverless Microservices Architecture with DynamoDB\",\n  \"courseCode\": \"MCA-401\",\n  \"description\": \"Design and deploy a serverless backend adhering to the Single Table or Multi-Table DynamoDB pattern using AWS Lambda and API Gateway.\",\n  \"deadline\": \"2026-12-15T23:59:59.000Z\",\n  \"maxMarks\": 100,\n  \"guidelines\": [\n    \"Submit PDF report with architecture diagram\",\n    \"Include DynamoDB KeySchema design rationale\",\n    \"Explain least-privilege IAM policies\"\n  ],\n  \"allowLateSubmissions\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/assignments",
+              "host": ["{{baseUrl}}"],
+              "path": ["assignments"]
+            },
+            "description": "Publishes a new assignment. Requires FACULTY group."
+          }
+        },
+        {
+          "name": "Update Assignment (Faculty Only)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deadline\": \"2026-12-20T23:59:59.000Z\",\n  \"status\": \"Active\",\n  \"maxMarks\": 100\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/assignments/{{assignmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["assignments", "{{assignmentId}}"]
+            },
+            "description": "Modifies assignment parameters."
+          }
+        },
+        {
+          "name": "Delete Assignment (Faculty Only)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/assignments/{{assignmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["assignments", "{{assignmentId}}"]
+            },
+            "description": "Removes an assignment from the portal."
+          }
+        }
+      ]
+    },
+    {
+      "name": "S3 Private Document Operations",
+      "item": [
+        {
+          "name": "Request Presigned Upload URL (PDF)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assignmentId\": \"{{assignmentId}}\",\n  \"fileName\": \"MCA401_Serverless_Report.pdf\",\n  \"contentType\": \"application/pdf\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/s3/upload-url",
+              "host": ["{{baseUrl}}"],
+              "path": ["s3", "upload-url"]
+            },
+            "description": "Generates a time-limited S3 presigned PUT URL. The client directly PUTs the PDF to S3 using the returned uploadUrl."
+          }
+        },
+        {
+          "name": "Request Presigned Download URL",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/s3/download-url?submissionId={{submissionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["s3", "download-url"],
+              "query": [
+                {
+                  "key": "submissionId",
+                  "value": "{{submissionId}}"
+                }
+              ]
+            },
+            "description": "Generates a time-limited S3 presigned GET URL with Content-Disposition attachment."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Submissions & Grading Lifecycle",
+      "item": [
+        {
+          "name": "Submit Assignment (Student)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assignmentId\": \"{{assignmentId}}\",\n  \"fileName\": \"MCA401_Serverless_Report.pdf\",\n  \"s3FileKey\": \"submissions/{{assignmentId}}/student-sub/1700000000000-MCA401_Serverless_Report.pdf\",\n  \"remarks\": \"Included complete CloudFormation template and latency benchmark graphs.\",\n  \"studentRoll\": \"MCA2024042\",\n  \"studentName\": \"Aarav Sharma\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/submissions",
+              "host": ["{{baseUrl}}"],
+              "path": ["submissions"]
+            },
+            "description": "Records the submission item in DynamoDB with status 'Pending'."
+          }
+        },
+        {
+          "name": "Get My Submissions (Student)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/submissions/my",
+              "host": ["{{baseUrl}}"],
+              "path": ["submissions", "my"]
+            },
+            "description": "Retrieves all submission records belonging to the authenticated student."
+          }
+        },
+        {
+          "name": "Get All Submissions (Faculty Only)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/submissions?status=Pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["submissions"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "Pending"
+                }
+              ]
+            },
+            "description": "Faculty view of all submissions across all courses."
+          }
+        },
+        {
+          "name": "Get Submissions for Assignment (Faculty Only)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/assignments/{{assignmentId}}/submissions",
+              "host": ["{{baseUrl}}"],
+              "path": ["assignments", "{{assignmentId}}", "submissions"]
+            },
+            "description": "Queries submissions for a specific assignment via AssignmentSubmissionsIndex GSI."
+          }
+        },
+        {
+          "name": "Get Submission Details By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/submissions/{{submissionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["submissions", "{{submissionId}}"]
+            },
+            "description": "Retrieves single submission. Accessible by owner student or faculty."
+          }
+        },
+        {
+          "name": "Grade & Evaluate Submission (Faculty Only)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Approved\",\n  \"marks\": 94,\n  \"facultyFeedback\": \"Excellent architectural design with comprehensive IAM security considerations and proper DynamoDB GSI modeling.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/submissions/{{submissionId}}/review",
+              "host": ["{{baseUrl}}"],
+              "path": ["submissions", "{{submissionId}}", "review"]
+            },
+            "description": "Updates submission status to Approved/Reviewed/Rejected with numeric marks and faculty feedback."
+          }
+        }
+      ]
+    }
+  ]
+}

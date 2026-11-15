@@ -1,0 +1,163 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  AWS CloudFormation Template Update for Cloud-Based Student Management & Assignment Portal.
+  Includes the SubmissionIdIndex Global Secondary Index (GSI) on CloudEdu-Submissions
+  for O(1) single-submission lookups by submissionId.
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+    Description: Deployment stage/environment for resource naming and tagging.
+
+  ProjectName:
+    Type: String
+    Default: CloudEdu
+    Description: Base project identifier for naming DynamoDB tables and resources.
+
+Resources:
+  # ============================================================================
+  # TABLE 1: Users Table (CloudEdu-Users)
+  # ============================================================================
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${ProjectName}-Users"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: rollNumber
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: RollNumberIndex
+          KeySchema:
+            - AttributeName: rollNumber
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Component
+          Value: Database-Users
+
+  # ============================================================================
+  # TABLE 2: Assignments Table (CloudEdu-Assignments)
+  # ============================================================================
+  AssignmentsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${ProjectName}-Assignments"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: assignmentId
+          AttributeType: S
+        - AttributeName: courseCode
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: assignmentId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: CourseCodeIndex
+          KeySchema:
+            - AttributeName: courseCode
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Component
+          Value: Database-Assignments
+
+  # ============================================================================
+  # TABLE 3: Submissions Table (CloudEdu-Submissions) - ENHANCED WITH SubmissionIdIndex
+  # ============================================================================
+  SubmissionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${ProjectName}-Submissions"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: studentId
+          AttributeType: S
+        - AttributeName: submissionKey
+          AttributeType: S
+        - AttributeName: assignmentId
+          AttributeType: S
+        - AttributeName: submittedAt
+          AttributeType: S
+        - AttributeName: submissionId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: studentId
+          KeyType: HASH
+        - AttributeName: submissionKey
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: AssignmentSubmissionsIndex
+          KeySchema:
+            - AttributeName: assignmentId
+              KeyType: HASH
+            - AttributeName: submittedAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: StudentSubmissionsIndex
+          KeySchema:
+            - AttributeName: studentId
+              KeyType: HASH
+            - AttributeName: assignmentId
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: SubmissionIdIndex
+          KeySchema:
+            - AttributeName: submissionId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Component
+          Value: Database-Submissions
+
+Outputs:
+  SubmissionsTableName:
+    Description: Name of the DynamoDB Submissions table
+    Value: !Ref SubmissionsTable
+
+  SubmissionIdIndexName:
+    Description: GSI for direct O(1) submission retrieval
+    Value: SubmissionIdIndex

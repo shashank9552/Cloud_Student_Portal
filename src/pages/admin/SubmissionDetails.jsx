@@ -83,8 +83,18 @@ export const SubmissionDetails = () => {
     }
   };
 
-  const handleDownload = () => {
-    alert(`Downloading "${submission?.fileName}" from simulated Amazon S3 bucket...`);
+  const handleDownload = async () => {
+    try {
+      const downloadUrl = await submissionService.getPresignedDownloadUrl({
+        submissionId: submission?.submissionId || submission?.id,
+        fileKey: submission?.s3FileKey,
+        filename: submission?.fileName,
+      });
+      window.open(downloadUrl, '_blank');
+      toast.success(`Opening S3 secure download for "${submission?.fileName}"...`);
+    } catch (err) {
+      toast.error('Failed to generate secure S3 download URL');
+    }
   };
 
   if (loading) {
